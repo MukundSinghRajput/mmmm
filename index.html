@@ -2,80 +2,238 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Telegram Mini App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Note App</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: var(--tg-theme-bg-color);
-            color: var(--tg-theme-text-color);
-            margin: 0;
-            padding: 16px;
+            font-family: 'Helvetica Neue', sans-serif;
+            background-color: #f5f5f5;
         }
+
         .container {
             max-width: 600px;
-            margin: 0 auto;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
-        button {
-            background-color: var(--tg-theme-button-color);
-            color: var(--tg-theme-button-text-color);
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
+
+        .note-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .note-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
             cursor: pointer;
-            width: 100%;
-            margin-top: 10px;
+        }
+
+        .note-item:last-child {
+            border-bottom: none;
+        }
+
+        .note-item h3 {
+            margin-top: 0;
+        }
+
+        .new-note-button {
+            display: block;
+            margin: 20px auto;
+            padding: 12px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .new-note-button:hover {
+            background-color: #0056b3;
+        }
+
+        .edit-note-button {
+            display: inline-block;
+            padding: 5px 10px;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-left: 10px;
+        }
+
+        .edit-note-button:hover {
+            background-color: #218838;
+        }
+
+        .delete-note-button {
+            display: inline-block;
+            padding: 5px 10px;
+            background-color: #dc3545;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-left: 10px;
+        }
+
+        .delete-note-button:hover {
+            background-color: #c82333;
+        }
+
+        .congrats-animation {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: none;
+            animation: bounce 1s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+
+        .congrats-message {
+            background-color: #28a745;
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Welcome to My Telegram Mini App</h1>
-        
-        <div id="userInfo">
-            <p>Loading user information...</p>
+        <h1 class="text-2xl font-bold mb-4">Telegram Note App</h1>
+        <ul class="note-list" id="noteList">
+            </ul>
+        <button class="new-note-button" id="newNoteButton">Add New Note</button ```html
+        <div class="congrats-animation" id="congratsAnimation">
+            <div class="congrats-message">Note added successfully!</div>
         </div>
-
-        <button id="mainButton">Send Data</button>
     </div>
 
     <script>
-        // Telegram Web App initialization
-        const tg = window.Telegram.WebApp;
-        
-        // Expand the app to full screen
-        tg.expand();
+        // Initialize Telegram Web App
+        Telegram.WebApp.ready();
 
-        // Configure main button
-        tg.MainButton.text = "Send Data";
-        tg.MainButton.show();
+        // Get the user's ID
+        const userId = Telegram.WebApp.initDataUnsafe.user.id;
 
-        // Get user information
-        const userInfo = document.getElementById('userInfo');
-        userInfo.innerHTML = `
-            <p>User ID: ${tg.initDataUnsafe.user.id}</p>
-            <p>First Name: ${tg.initDataUnsafe.user.first_name}</p>
-            <p>Last Name: ${tg.initDataUnsafe.user.last_name || 'N/A'}</p>
-            <p>Username: ${tg.initDataUnsafe.user.username || 'N/A'}</p>
-        `;
+        // Get the note list element
+        const noteList = document.getElementById('noteList');
 
-        // Main button click handler
-        tg.MainButton.onClick(() => {
-            // Send data back to the Telegram server
-            tg.sendData('Hello from Mini App!');
+        // Get the new note button element
+        const newNoteButton = document.getElementById('newNoteButton');
+
+        // Get the congrats animation element
+        const congratsAnimation = document.getElementById('congratsAnimation');
+
+        // Function to get notes from Telegram Cloud Storage
+        async function getNotes() {
+            try {
+                const notes = await Telegram.WebApp.storage.get('notes');
+                return notes || [];
+            } catch (error) {
+                console.error(error);
+                return [];
+            }
+        }
+
+        // Function to save notes to Telegram Cloud Storage
+        async function saveNotes(notes) {
+            try {
+                await Telegram.WebApp.storage.set('notes', notes);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // Function to add a new note
+        async function addNote() {
+            const note = prompt('Enter your note:');
+            if (note) {
+                const notes = await getNotes();
+                notes.push({ text: note, id: Date.now() });
+                await saveNotes(notes);
+                renderNotes();
+                showCongratsAnimation();
+            }
+        }
+
+        // Function to render notes
+        async function renderNotes() {
+            const notes = await getNotes();
+            noteList.innerHTML = '';
+            notes.forEach((note) => {
+                const noteItem = document.createElement('li');
+                noteItem.classList.add('note-item');
+                noteItem.innerHTML = `
+                    <h3>${note.text}</h3>
+                    <button class="edit-note-button" data-id="${note.id}">Edit</button>
+                    <button class="delete-note-button" data-id="${note.id}">Delete</button>
+                `;
+                noteList.appendChild(noteItem);
+            });
+        }
+
+        // Function to show congrats animation
+        function showCongratsAnimation() {
+            congratsAnimation.style.display = 'block';
+            setTimeout(() => {
+                congratsAnimation.style.display = 'none';
+            }, 2000);
+        }
+        newNoteButton.addEventListener('click', addNote);
+        // Add event listener to note list
+        noteList.addEventListener('click', (event) => {
+            if (event.target.classList.contains('edit-note-button')) {
+                const noteId = event.target.dataset.id;
+                const note = prompt('Enter your note:');
+                if (note) {
+                    const notes = getNotes();
+                    const index = notes.findIndex((note) => note.id === parseInt(noteId));
+                    if (index !== -1) {
+                        notes[index].text = note;
+                        saveNotes(notes);
+                        renderNotes();
+                    }
+                }
+                // Add haptic feedback after editing a note
+                if (navigator.vibrate) {
+                    navigator.vibrate(50);
+                }
+            } else if (event.target.classList.contains('delete-note-button')) {
+                const noteId = event.target.dataset.id;
+                const notes = getNotes();
+                const index = notes.findIndex((note) => note.id === parseInt(noteId));
+                if (index !== -1) {
+                    notes.splice(index, 1);
+                    saveNotes(notes);
+                    renderNotes();
+                }
+                // Add haptic feedback after deleting a note
+                if (navigator.vibrate) {
+                    navigator.vibrate(50);
+                }
+            }
         });
-
-        // Close confirmation
-        tg.onEvent('mainButtonClicked', () => {
-            tg.close();
-        });
-
-        // Handle back button
-        tg.BackButton.show();
-        tg.BackButton.onClick(() => {
-            tg.close();
-        });
+        renderNotes();
     </script>
 </body>
 </html>
