@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Telegram Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            margin: 0;
+            padding: 16px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        button {
+            background-color: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to My Telegram Mini App</h1>
+        
+        <div id="userInfo">
+            <p>Loading user information...</p>
+        </div>
+
+        <button id="mainButton">Send Data</button>
+    </div>
+
+    <script>
+        // Telegram Web App initialization
+        const tg = window.Telegram.WebApp;
+        
+        // Expand the app to full screen
+        tg.expand();
+
+        // Configure main button
+        tg.MainButton.text = "Send Data";
+        tg.MainButton.show();
+
+        // Get user information
+        const userInfo = document.getElementById('userInfo');
+        userInfo.innerHTML = `
+            <p>User ID: ${tg.initDataUnsafe.user.id}</p>
+            <p>First Name: ${tg.initDataUnsafe.user.first_name}</p>
+            <p>Last Name: ${tg.initDataUnsafe.user.last_name || 'N/A'}</p>
+            <p>Username: ${tg.initDataUnsafe.user.username || 'N/A'}</p>
+        `;
+
+        // Main button click handler
+        tg.MainButton.onClick(() => {
+            // Send data back to the Telegram server
+            tg.sendData('Hello from Mini App!');
+        });
+
+        // Close confirmation
+        tg.onEvent('mainButtonClicked', () => {
+            tg.close();
+        });
+
+        // Handle back button
+        tg.BackButton.show();
+        tg.BackButton.onClick(() => {
+            tg.close();
+        });
+    </script>
+</body>
+</html>
